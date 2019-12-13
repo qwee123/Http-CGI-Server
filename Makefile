@@ -20,7 +20,7 @@ single: np_single_proc.cpp $(socket) $(np_single_proc)
 multi: np_multi_proc.cpp $(socket) $(np_multi_proc)
 	$(CC) $^ -o np_multi_proc
 
-console: cgi/renderConsoleCGI.cpp
+console: cgi/renderConsoleCGI.hpp cgi/renderConsoleCGI.cpp
 	$(CC) -I $(boost_lib) $(linker) $^ -o console.cgi
 
 panel: cgi/renderPanelCGI.cpp

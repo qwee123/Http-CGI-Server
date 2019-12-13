@@ -84,11 +84,11 @@ class HttpServer {
             
             is >> query;
             setenv("REQUEST_URI",query.c_str(),1);
-            auto s = boost::algorithm::find_first(query,"?").begin();
-            if((s - query.begin()) == query.length()) //no question mark found
+            auto s = boost::algorithm::find_first(query,"?");
+            if(s.empty()) //no question mark found
                 setenv("QUERY_STRING"," ", 1);
             else
-                setenv("QUERY_STRING",query.substr(s - query.begin() + 1).c_str(), 1);
+                setenv("QUERY_STRING",query.substr(s.begin() - query.begin() + 1).c_str(), 1);
  
             is >> query;
             setenv("SERVER_PROTOCOL",query.c_str(),1);
@@ -127,7 +127,7 @@ class HttpServer {
                 cout << "Start " << uri << endl;          
   
                 auto sockfd = _sock.native_handle();
-                dup2(sockfd, STDOUT_FILENO);
+                //dup2(sockfd, STDOUT_FILENO);
                 close(sockfd);
                 
                 cout << "HTTP/1.1 200 OK" << endl; 
@@ -136,9 +136,6 @@ class HttpServer {
                     cerr << "Error: Unknown request URI: " << uri << endl;
                     exit(0);
                 }                             
-            }
-            else{
-                _sock.close();
             }
         }
 };

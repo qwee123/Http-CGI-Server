@@ -18,6 +18,10 @@ void buildSession();
 bool queryIsValid(vector<string>::iterator,
     vector<string>::iterator, vector<string>::iterator);
 
+void render();
+void renderStyle();
+void renderSessionTable();
+
 class RemoteSession{
     private:
         int _sess_num;
@@ -33,6 +37,8 @@ class RemoteSession{
         RemoteSession(vector<string>::iterator,
               vector<string>::iterator, vector<string>::iterator,int );
         ~RemoteSession();
+        string getSessionName();
+        string getSessionID();
 
     private:
         void connectToServer();
@@ -41,6 +47,8 @@ class RemoteSession{
         void onMesgRecv(const boost::system::error_code &);
         void receiveFromServer();
         void sendToServer();
+        void escapeResHTML();
+        void escapeCmdHTML();
 };
 
 vector<unique_ptr<RemoteSession>> sessions;

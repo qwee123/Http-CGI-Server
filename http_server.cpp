@@ -127,7 +127,7 @@ class HttpServer {
                 cout << "Start " << uri << endl;          
   
                 auto sockfd = _sock.native_handle();
-                //dup2(sockfd, STDOUT_FILENO);
+                dup2(sockfd, STDOUT_FILENO);
                 close(sockfd);
                 
                 cout << "HTTP/1.1 200 OK" << endl; 

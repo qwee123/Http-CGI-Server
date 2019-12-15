@@ -4,82 +4,92 @@
 
 io_service service;
 posix::stream_descriptor out(service, ::dup(STDOUT_FILENO));
+std::string console_html_content;
 
 void on_output(const boost::system::error_code &ec, size_t bytes){
     if (ec)   cerr << "Error on output result" << endl;
 
 }
 
+void onSendConsoleHTML(const boost::system::error_code &ec, size_t bytes){
+    if (ec){
+	 cerr << "Error on send consoleCGI HTML" << endl;
+         return ;
+    }
+ 
+    for(auto itr = sessions.begin();itr != sessions.end();itr++){
+        (*itr)->startService();
+    }
+}
+
 int main(int argc, char* const argv[]){
 
-   // cout << "HTTP/1.1 200 OK" << endl;
-    render();
+    buildSession();
+    console_html_content.clear();
+    renderHTML();
+    out.async_write_some(buffer(console_html_content), onSendConsoleHTML);
 
     service.run(); 
     return 0;
 }
 
-void render(){
-    cout << "Content-type:text/html\r\n\r\n";
-    cout << "<!DOCTYPE html>" << endl;
-    cout << "<html lang=\"en\">" << endl;
-    cout << "<head>" << endl;
+void renderHTML(){
+    console_html_content.reserve(9000);
+    console_html_content = "Content-type:text/html\r\n\r\n";
+    console_html_content.append("<!DOCTYPE html>\n");
+    console_html_content.append("<html lang=\"en\">\n");
+    console_html_content.append("<head>\n");
     renderStyle();
-    cout << "</head>" << endl;
+    console_html_content.append("</head>\n");
 
-    cout << "<body>" << endl;
-    buildSession();
+    console_html_content.append("<body>\n");
     renderSessionTable();
-    cout << "</body>" << endl;
-    cout << "</html>";
+    console_html_content.append("</body>\n");
+    console_html_content.append("</html>\n");
 }
 
 void renderStyle(){
-    cout << "<meta charset=\"UTF-8\" />" << endl;
-    cout << "<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css\" " <<
-      "integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\" />" << endl;
-    cout << "<link href=\"https://fonts.googleapis.com/css?family=Source+Code+Pro\" rel=\"stylesheet\" />" << endl;
-    cout << "<link rel=\"icon\" type=\"image/png\" " << 
-       "href=\"https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678068-terminal-512.png\" />" << endl;
+    console_html_content.append("<meta charset=\"UTF-8\" />\n");
+    console_html_content.append("<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css\" integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\" />\n");
+    console_html_content.append("<link href=\"https://fonts.googleapis.com/css?family=Source+Code+Pro\" rel=\"stylesheet\" />\n");
+    console_html_content.append("<link rel=\"icon\" type=\"image/png\" href=\"https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678068-terminal-512.png\" />\n");
 
-    cout << "<style>" << endl;
-    cout << "  * {" << endl;
-    cout << "   font-family: 'Source Code Pro', monospace;" << endl;
-    cout << "    font-size: 1rem !important;" << endl;
-    cout << "  }" << endl;
-    cout << "  body {" << endl;
-    cout << "   background-color: #212529;" << endl;
-    cout << "  }" << endl;
-    cout << "  pre {" << endl;
-    cout << "    color: #cccccc;" << endl;
-    cout << "  }" << endl;
-    cout << "  b {" << endl;
-    cout << "    color: #ffffff;" << endl;
-    cout << "  }" << endl;
-    cout << " </style>" << endl;
+    console_html_content.append("<style>\n");
+    console_html_content.append("  * {\n");
+    console_html_content.append("   font-family: 'Source Code Pro', monospace;\n");
+    console_html_content.append("    font-size: 1rem !important;\n");
+    console_html_content.append("  }\n");
+    console_html_content.append("  body {\n");
+    console_html_content.append("   background-color: #212529;\n");
+    console_html_content.append("  }\n");
+    console_html_content.append("  pre {\n");
+    console_html_content.append("    color: #cccccc;\n");
+    console_html_content.append("  }\n");
+    console_html_content.append("  b {\n");
+    console_html_content.append("    color: #ffffff;\n");
+    console_html_content.append("  }\n");
+    console_html_content.append(" </style>\n");
 }
 
 void renderSessionTable(){
-    cout << "<table class=\"table table-dark table-bordered\">" << endl;
-    cout << "<thead>" << endl;
-    cout << "<tr>" << endl;
-
+    console_html_content.append("<table class=\"table table-dark table-bordered\">\n");
+    console_html_content.append("<thead>\n");
+    console_html_content.append("<tr>\n");
     for(auto itr = sessions.begin();itr != sessions.end(); itr++){
-        cout << "<th scope=\"col\">" << (*itr)->getSessionName() << "</th>" << endl;      
+        console_html_content.append("<th scope=\"col\">" +  (*itr)->getSessionName() + "</th>\n");      
     }
+    console_html_content.append("</tr>\n");
+    console_html_content.append("</thead>\n");
+    console_html_content.append("<tbody>\n");
 
-    cout << "</thead>" << endl;
-    cout << "<tbody>" << endl;
-    cout << "</tr>" << endl;
-
-    cout << "<tr>" << endl;
+    console_html_content.append("<tr>\n");
     for(auto itr = sessions.begin();itr != sessions.end(); itr++){
-        cout << "<td><pre id=\"" << (*itr)->getSessionID() << "\" class=\"mb-0\"></pre></td>" << endl;
+        console_html_content.append("<td><pre id=\"" + (*itr)->getSessionID() + "\" class=\"mb-0\"></pre></td>\n");
     }
-    cout << "</tr>" << endl;
+    console_html_content.append("</tr>\n");
     
-    cout << "</tbody>" << endl;
-    cout << "</table>" << endl;
+    console_html_content.append("</tbody>\n");
+    console_html_content.append("</table>\n");
 }
 
 bool queryIsValid(vector<string>::iterator itr_h,
@@ -111,15 +121,14 @@ void buildSession(){
     int i = 0;
     for(auto itr = v_query.begin();itr != v_query.end();itr += QUERY_TUPLE){
         if(queryIsValid(itr,itr+1,itr+2)){ 
-            unique_ptr<RemoteSession> ptr(new RemoteSession(itr,itr+1,itr+2,i));
-            sessions.push_back(move(ptr));  
+            sessions.push_back(move(make_shared<RemoteSession>(itr,itr+1,itr+2,i)));  
         }
         i++;      
     }
 }
 
-RemoteSession::RemoteSession(vector<string>::iterator h,
-         vector<string>::iterator p,vector<string>::iterator tc,int sn):_sock(service),_sess_num(sn){ 
+RemoteSession::RemoteSession(vector<string>::iterator h, vector<string>::iterator p,
+        vector<string>::iterator tc,int sn):_sock(service),_resolver(service),_sess_num(sn){ 
  
     auto pos = boost::algorithm::find_first(*h,"=").begin(); 
     host = (*h).substr(pos - (*h).begin() + 1);
@@ -132,8 +141,6 @@ RemoteSession::RemoteSession(vector<string>::iterator h,
     if(!test_case)    test_case.close();
     test_case.open(filename);
     if(!test_case)    cerr << "Error: Cannot open file: " << filename << endl;
-
-    connectToServer();
 }
 
 RemoteSession::~RemoteSession(){
@@ -155,20 +162,41 @@ string RemoteSession::getSessionID(){
     return SID;
 }
 
-void RemoteSession::connectToServer(){
-    ip::tcp::resolver resolver(service);
-    ip::tcp::resolver::query query(host,to_string(port));
-    ip::tcp::resolver::iterator itr = resolver.resolve(query);
-    ep = *itr;
-    
-    _sock.async_connect(ep,boost::bind(&RemoteSession::onConnect, 
-           this, boost::asio::placeholders::error));
+void RemoteSession::startService(){
+    connectToServer();
 }
 
-void RemoteSession::onConnect(const boost::system::error_code& ec){
-    if(ec) cerr << "Error: Fail to connect!" << endl;
+void RemoteSession::connectToServer(){
+    ip::tcp::resolver::query query(host,to_string(port));
+    _resolver.async_resolve(query,boost::bind(&RemoteSession::onResolve, this,
+           boost::asio::placeholders::error, boost::asio::placeholders::iterator));   
+}
 
-    receiveFromServer();
+void RemoteSession::onResolve(const boost::system::error_code& ec,ip::tcp::resolver::iterator ep_itr){
+    if(ec){
+        cerr << "Error: Fail to resolve DNS!" << endl;
+        return ;
+    }
+
+    ep = *ep_itr;
+     _sock.async_connect(ep,boost::bind(&RemoteSession::onConnect, 
+           this, boost::asio::placeholders::error,++ep_itr));
+}
+
+void RemoteSession::onConnect(const boost::system::error_code& ec,ip::tcp::resolver::iterator ep_itr){
+    if(!ec){
+        receiveFromServer();
+    }
+    else if(ep_itr != ip::tcp::resolver::iterator()){ //try next endpoint
+        _sock.close();
+        ep = *ep_itr;
+        _sock.async_connect(ep,boost::bind(&RemoteSession::onConnect,
+            this, boost::asio::placeholders::error, ++ep_itr));
+    }
+    else{
+        cerr << "Error: Fail to connect!" << endl;
+        return ;
+    }
 }
 
 void RemoteSession::onMesgSend(const boost::system::error_code& ec){
@@ -207,7 +235,8 @@ void RemoteSession::onMesgRecv(const boost::system::error_code& ec){
                       + trim_res + "';</script>\n";
     trim_res.clear();
 
-    async_write(out,buffer(update_script),on_output);
+    boost::asio::async_write(out, buffer(update_script), boost::bind(&RemoteSession::onOutputResult,
+             this, boost::asio::placeholders::error));
  
     if(boost::algorithm::find_last(res,"% ").empty()){ 
         receiveFromServer();
@@ -238,11 +267,16 @@ void RemoteSession::sendToServer(){
     string update_script = "<script>document.getElementById('" + getSessionID() + "').innerHTML += '<b>"
                       + cmd + "<br></b>';</script>\n";
     //trim_cmd.clear();
-    async_write(out,buffer(update_script),on_output);
+    async_write(out, buffer(update_script),boost::bind(&RemoteSession::onOutputResult,
+              this, boost::asio::placeholders::error));
 
     sleep(0.5);
     cmd.append("\n");
     _sock.async_send(buffer(cmd),boost::bind(&RemoteSession::onMesgSend,
                 this, boost::asio::placeholders::error));
 
+}
+
+void RemoteSession::onOutputResult(const boost::system::error_code& ec){
+    if(ec)    cerr << "Error on output result!" << endl;
 }

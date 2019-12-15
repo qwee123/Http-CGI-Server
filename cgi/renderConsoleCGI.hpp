@@ -14,11 +14,12 @@
 using namespace std;
 using namespace boost::asio;
 
+void onSendConsoleHTML(const boost::system::error_code &, size_t);
 void buildSession();
 bool queryIsValid(vector<string>::iterator,
     vector<string>::iterator, vector<string>::iterator);
 
-void render();
+void renderHTML();
 void renderStyle();
 void renderSessionTable();
 
@@ -30,6 +31,7 @@ class RemoteSession{
         ifstream test_case;
         ip::tcp::socket _sock;
         ip::tcp::endpoint ep;
+        ip::tcp::resolver _resolver;
         string res;
         string cmd;
 
@@ -39,18 +41,21 @@ class RemoteSession{
         ~RemoteSession();
         string getSessionName();
         string getSessionID();
+        void startService();
 
     private:
         void connectToServer();
-        void onConnect(const boost::system::error_code &);
+        void onResolve(const boost::system::error_code &,ip::tcp::resolver::iterator);
+        void onConnect(const boost::system::error_code &,ip::tcp::resolver::iterator);
         void onMesgSend(const boost::system::error_code &);
         void onMesgRecv(const boost::system::error_code &);
         void receiveFromServer();
         void sendToServer();
         void escapeResHTML();
         void escapeCmdHTML();
+        void onOutputResult(const boost::system::error_code&);
 };
 
-vector<unique_ptr<RemoteSession>> sessions;
+vector<shared_ptr<RemoteSession>> sessions;
 
 #endif
